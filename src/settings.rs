@@ -1,19 +1,33 @@
 use config::{Config, Environment, File};
+use humantime_serde::re::humantime;
 use serde::Deserialize;
 use std::net::SocketAddr;
 use std::path::Path;
+use std::time::Duration;
 
 #[derive(Debug, Deserialize)]
 pub struct Settings {
-    /// RUST_LOG compatible settings string. Default to INFO
+    /// Log level configuration (RUST_LOG compatible)
     #[serde(default = "default_log")]
     pub log: String,
+
+    /// Custom tracing settings for dynamic log level updates
+    #[serde(default)]
+    pub custom_tracing: custom_tracing::Settings,
     /// Listen address for grpc requests. Default "0.0.0.0:6080"
     #[serde(default = "default_grpc_listen_addr")]
     pub grpc_listen: SocketAddr,
-    /// Listen address for metrics requests. Default "0.0.0.0:19011"
-    #[serde(default = "default_metrics_listen_addr")]
-    pub metrics_listen: SocketAddr,
+    /// Metrics settings
+    #[serde(default)]
+    pub metrics: crate::metrics::Settings,
+    /// Base58-encoded hotspot public keys to deny
+    #[serde(default)]
+    pub denied_hotspots: Vec<String>,
+    /// Region names to deny (e.g., "US915", "EU868")
+    #[serde(default)]
+    pub denied_regions: Vec<String>,
+    #[serde(default = "default_cleanup_timeout", with = "humantime_serde")]
+    pub cleanup_timeout: Duration,
 }
 
 pub fn default_log() -> String {
@@ -24,10 +38,8 @@ pub fn default_grpc_listen_addr() -> SocketAddr {
     "0.0.0.0:6080".parse().expect("invalid default socket addr")
 }
 
-pub fn default_metrics_listen_addr() -> SocketAddr {
-    "0.0.0.0:19011"
-        .parse()
-        .expect("invalid default socket addr")
+pub fn default_cleanup_timeout() -> Duration {
+    humantime::parse_duration("30 minutes").unwrap()
 }
 
 impl Settings {

@@ -24,7 +24,7 @@ StartLimitBurst=3
 
 [Service]
 Type=simple
-ExecStart=/opt/multi_buy_service/bin/multi_buy_service -c /opt/multi_buy_service/etc/settings.toml
+ExecStart=/opt/multi_buy_service/bin/multi_buy_service -c /opt/multi_buy_service/etc/settings.toml server
 User=helium
 PIDFile=/var/run/multi_buy_service
 Restart=always

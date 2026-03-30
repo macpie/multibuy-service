@@ -8,6 +8,7 @@ const HIT_TOTAL: &str = "multi_buy_hit_total";
 const DENIED_TOTAL: &str = "multi_buy_denied_total";
 const CACHE_SIZE: &str = "multi_buy_cache_size";
 const CACHE_CLEANED_TOTAL: &str = "multi_buy_cache_cleaned_total";
+const REQUEST_DURATION: &str = "multi_buy_request_duration_ms";
 
 pub fn start_metrics(settings: &Settings) -> anyhow::Result<()> {
     install(settings.endpoint)
@@ -38,4 +39,8 @@ pub fn set_cache_size(size: f64) {
 
 pub fn increment_cache_cleaned(count: u64) {
     metrics::counter!(CACHE_CLEANED_TOTAL).increment(count);
+}
+
+pub fn record_request_duration(duration: std::time::Duration) {
+    metrics::histogram!(REQUEST_DURATION).record(duration.as_millis() as f64);
 }

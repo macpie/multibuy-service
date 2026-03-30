@@ -64,6 +64,7 @@ impl multi_buy_server::MultiBuy for State {
         &self,
         request: Request<MultiBuyIncReqV1>,
     ) -> Result<tonic::Response<MultiBuyIncResV1>, tonic::Status> {
+        let start = std::time::Instant::now();
         crate::metrics::increment_hit();
 
         let multi_buy_req = request.into_inner();
@@ -81,6 +82,8 @@ impl multi_buy_server::MultiBuy for State {
             new_count,
             denied
         );
+
+        crate::metrics::record_request_duration(start.elapsed());
 
         Ok(tonic::Response::new(MultiBuyIncResV1 {
             count: new_count,

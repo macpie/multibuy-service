@@ -8,6 +8,7 @@ edition = "2021"
 anyhow = "1.0"
 bs58 = "0.5"
 clap = { version = "4.6", features = ["derive"] }
+dashmap = "6.1"
 config = { version = "0.15", default-features = false, features = ["toml"] }
 humantime-serde = "1.1"
 metrics = "0.24"

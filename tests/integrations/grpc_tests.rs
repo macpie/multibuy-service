@@ -1,5 +1,6 @@
 use crate::common;
 use helium_proto::Region;
+use std::time::Duration;
 
 #[tokio::test]
 async fn inc_returns_incrementing_count() {
@@ -47,12 +48,10 @@ async fn denied_hotspot_returns_denied_and_still_increments() {
     let _shutdown = common::start_server(&settings, addr).await;
     let mut client = common::connect_client(addr).await;
 
-    // Request with denied hotspot key
     let res = common::inc(&mut client, "key1", b"denied-hotspot-1".to_vec(), 0).await;
     assert!(res.denied);
     assert_eq!(res.count, 1, "counter should still increment when denied");
 
-    // Second request with same denied hotspot
     let res2 = common::inc(&mut client, "key1", b"denied-hotspot-1".to_vec(), 0).await;
     assert!(res2.denied);
     assert_eq!(res2.count, 2);
@@ -66,7 +65,6 @@ async fn allowed_hotspot_is_not_denied() {
     let _shutdown = common::start_server(&settings, addr).await;
     let mut client = common::connect_client(addr).await;
 
-    // Request with a different (allowed) hotspot key
     let res = common::inc(&mut client, "key1", b"allowed-hotspot".to_vec(), 0).await;
     assert!(!res.denied);
     assert_eq!(res.count, 1);
@@ -107,7 +105,6 @@ async fn empty_hotspot_key_is_not_denied() {
     let _shutdown = common::start_server(&settings, addr).await;
     let mut client = common::connect_client(addr).await;
 
-    // Empty hotspot key should never match deny list
     let res = common::inc(&mut client, "key1", vec![], 0).await;
     assert!(!res.denied);
 }
@@ -119,15 +116,12 @@ async fn server_shuts_down_gracefully() {
     let shutdown = common::start_server(&settings, addr).await;
     let mut client = common::connect_client(addr).await;
 
-    // Confirm server is alive
     let res = common::inc(&mut client, "key1", vec![], 0).await;
     assert_eq!(res.count, 1);
 
-    // Trigger shutdown
     shutdown.trigger();
-    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    tokio::time::sleep(Duration::from_millis(100)).await;
 
-    // Client should get a connection error
     let result = client
         .inc(helium_proto::services::multi_buy::MultiBuyIncReqV1 {
             key: "key1".to_string(),
@@ -136,4 +130,50 @@ async fn server_shuts_down_gracefully() {
         })
         .await;
     assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn concurrent_requests_on_same_key() {
+    let settings = common::test_settings(vec![], vec![]);
+    let addr = common::available_port().await;
+    let _shutdown = common::start_server(&settings, addr).await;
+
+    let n = 100u32;
+    let mut handles = Vec::with_capacity(n as usize);
+
+    for _ in 0..n {
+        handles.push(tokio::spawn(async move {
+            let mut client = common::connect_client(addr).await;
+            common::inc(&mut client, "concurrent-key", vec![], 0).await
+        }));
+    }
+
+    let mut counts: Vec<u32> = Vec::with_capacity(n as usize);
+    for handle in handles {
+        counts.push(handle.await.unwrap().count);
+    }
+
+    counts.sort();
+    // Every count from 1..=n should appear exactly once (no lost updates)
+    assert_eq!(counts, (1..=n).collect::<Vec<_>>());
+}
+
+#[tokio::test]
+async fn cache_entries_expire_after_cleanup() {
+    let cleanup_timeout = Duration::from_millis(200);
+    let settings = common::test_settings_with_cleanup(vec![], vec![], cleanup_timeout);
+    let addr = common::available_port().await;
+    let _shutdown = common::start_server_with_cleanup(&settings, addr).await;
+    let mut client = common::connect_client(addr).await;
+
+    // Insert an entry
+    let res = common::inc(&mut client, "expire-key", vec![], 0).await;
+    assert_eq!(res.count, 1);
+
+    // Wait for cleanup to run (cleanup_timeout + margin)
+    tokio::time::sleep(cleanup_timeout + Duration::from_millis(300)).await;
+
+    // After expiry, a new inc should start from 1 again
+    let res2 = common::inc(&mut client, "expire-key", vec![], 0).await;
+    assert_eq!(res2.count, 1, "counter should reset after cache expiry");
 }

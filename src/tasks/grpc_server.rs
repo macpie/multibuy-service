@@ -1,7 +1,6 @@
+use crate::state::State;
 use helium_proto::services::multi_buy::Server as MultiBuyServer;
 use std::net::SocketAddr;
-
-use crate::grpc::state::State;
 
 pub struct GrpcServer {
     state: State,

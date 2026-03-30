@@ -2,9 +2,10 @@ use helium_proto::services::multi_buy::{
     multi_buy_client::MultiBuyClient, multi_buy_server::MultiBuyServer, MultiBuyIncReqV1,
     MultiBuyIncResV1,
 };
-use multi_buy_service::grpc::state::State;
 use multi_buy_service::settings::Settings;
+use multi_buy_service::state::State;
 use std::net::SocketAddr;
+use std::time::Duration;
 use tokio::net::TcpListener;
 use tonic::transport::Channel;
 
@@ -16,12 +17,26 @@ pub async fn available_port() -> SocketAddr {
 
 /// Build a test Settings with the given overrides.
 pub fn test_settings(denied_hotspots: Vec<String>, denied_regions: Vec<String>) -> Settings {
+    test_settings_with_cleanup(
+        denied_hotspots,
+        denied_regions,
+        Duration::from_secs(60 * 30),
+    )
+}
+
+/// Build a test Settings with custom cleanup timeout.
+pub fn test_settings_with_cleanup(
+    denied_hotspots: Vec<String>,
+    denied_regions: Vec<String>,
+    cleanup_timeout: Duration,
+) -> Settings {
     Settings::new::<String>(None).map_or_else(
         |_| panic!("failed to create default settings"),
         |mut s| {
             s.denied_hotspots = denied_hotspots;
             s.denied_regions = denied_regions;
             s.grpc_listen = "127.0.0.1:0".parse().unwrap();
+            s.cleanup_timeout = cleanup_timeout;
             s
         },
     )
@@ -45,6 +60,42 @@ pub async fn start_server(settings: &Settings, addr: SocketAddr) -> triggered::T
     });
 
     // Give the server a moment to start
+    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+
+    trigger
+}
+
+/// Start the gRPC server and also run the cache cleanup task.
+/// Returns (shutdown_trigger, cache_arc) for inspection.
+pub async fn start_server_with_cleanup(
+    settings: &Settings,
+    addr: SocketAddr,
+) -> triggered::Trigger {
+    let state = State::new(settings).unwrap();
+    let cache = state.cache();
+    let cleanup_timeout = settings.cleanup_timeout;
+    let (trigger, shutdown) = triggered::trigger();
+
+    let incoming = TcpListener::bind(addr).await.unwrap();
+    let incoming_stream = tokio_stream::wrappers::TcpListenerStream::new(incoming);
+
+    let shutdown_clone = shutdown.clone();
+    tokio::spawn(async move {
+        tonic::transport::Server::builder()
+            .add_service(MultiBuyServer::new(state))
+            .serve_with_incoming_shutdown(incoming_stream, shutdown_clone)
+            .await
+            .unwrap();
+    });
+
+    // Spawn cleanup task
+    let shutdown_clone = shutdown;
+    tokio::spawn(async move {
+        use multi_buy_service::tasks::cleanup::CacheCleanup;
+        let cleanup = CacheCleanup::from_cache(cache, cleanup_timeout);
+        cleanup.run_until(shutdown_clone).await.unwrap();
+    });
+
     tokio::time::sleep(std::time::Duration::from_millis(50)).await;
 
     trigger

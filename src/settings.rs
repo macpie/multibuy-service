@@ -57,8 +57,8 @@ impl Settings {
             let filename = file.as_ref().to_str().expect("file name");
             builder = builder.add_source(File::with_name(filename).required(false));
         }
-        // Add in settings from the environment (with a prefix of APP)
-        // Eg.. `MI_DEBUG=1 ./target/app` would set the `debug` key
+        // Add in settings from the environment (with a prefix of HDS)
+        // Eg.. `HDS_LOG=DEBUG ./target/release/multi_buy_service` would set the `log` key
         builder
             .add_source(Environment::with_prefix("hds").prefix_separator("_"))
             .build()

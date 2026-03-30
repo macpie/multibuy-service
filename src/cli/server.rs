@@ -1,6 +1,7 @@
 use crate::{
-    grpc::{cleanup::CacheCleanup, server::GrpcServer, state::State},
     settings::Settings,
+    state::State,
+    tasks::{cleanup::CacheCleanup, grpc_server::GrpcServer},
 };
 use task_manager::TaskManager;
 

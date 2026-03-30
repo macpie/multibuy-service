@@ -1,11 +1,10 @@
-use crate::grpc::state::{CacheValue, State};
-use std::collections::HashMap;
+use crate::cache::Cache;
+use crate::state::State;
 use std::sync::Arc;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use tokio::sync::Mutex;
+use std::time::Duration;
 
 pub struct CacheCleanup {
-    cache: Arc<Mutex<HashMap<String, CacheValue>>>,
+    cache: Arc<Cache>,
     cleanup_timeout: Duration,
 }
 
@@ -15,6 +14,17 @@ impl CacheCleanup {
             cache: state.cache(),
             cleanup_timeout,
         }
+    }
+
+    pub fn from_cache(cache: Arc<Cache>, cleanup_timeout: Duration) -> Self {
+        Self {
+            cache,
+            cleanup_timeout,
+        }
+    }
+
+    pub async fn run_until(self, shutdown: triggered::Listener) -> anyhow::Result<()> {
+        self.run(shutdown).await
     }
 
     async fn run(self, shutdown: triggered::Listener) -> anyhow::Result<()> {
@@ -29,21 +39,10 @@ impl CacheCleanup {
                     break;
                 },
                 _ = &mut batch_timer => {
-                    let now = SystemTime::now()
-                        .duration_since(UNIX_EPOCH)
-                        .expect("Time went backwards")
-                        .as_millis();
-
-                    let mut cache = self.cache.lock().await;
-                    let size_before = cache.len() as f64;
-
-                    cache.retain(|_, v| v.timestamp > now - self.cleanup_timeout.as_millis());
-
-                    let size_after = cache.len() as f64;
-                    let cleaned = (size_before - size_after) as u64;
-                    crate::metrics::set_cache_size(size_after);
-                    crate::metrics::increment_cache_cleaned(cleaned);
-                    tracing::info!("cleaned {} entries", cleaned);
+                    let removed = self.cache.remove_expired(self.cleanup_timeout);
+                    crate::metrics::set_cache_size(self.cache.len() as f64);
+                    crate::metrics::increment_cache_cleaned(removed as u64);
+                    tracing::info!("cleaned {} entries", removed);
 
                     batch_timer.as_mut().reset(tokio::time::Instant::now() + self.cleanup_timeout);
                 }

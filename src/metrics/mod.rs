@@ -14,14 +14,12 @@ pub fn start_metrics(settings: &Settings) -> anyhow::Result<()> {
 }
 
 fn install(socket_addr: SocketAddr) -> anyhow::Result<()> {
-    if let Err(e) = PrometheusBuilder::new()
+    PrometheusBuilder::new()
         .with_http_listener(socket_addr)
         .install()
-    {
-        tracing::error!("Failed to install Prometheus scrape endpoint: {e}");
-    } else {
-        tracing::info!("Metrics scrape endpoint listening on {socket_addr}");
-    }
+        .map_err(|e| anyhow::anyhow!("failed to install Prometheus scrape endpoint: {e}"))?;
+
+    tracing::info!("Metrics scrape endpoint listening on {socket_addr}");
 
     Ok(())
 }

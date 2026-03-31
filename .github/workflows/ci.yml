@@ -64,7 +64,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/${{ github.repository }}/base:${{ needs.compute-base-build-tag.outputs.image_tag }}
-      options: --user 1001:1001
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-fmt
       cancel-in-progress: true
@@ -79,7 +78,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/${{ github.repository }}/base:${{ needs.compute-base-build-tag.outputs.image_tag }}
-      options: --user 1001:1001
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-clippy
       cancel-in-progress: true
@@ -101,7 +99,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/${{ github.repository }}/base:${{ needs.compute-base-build-tag.outputs.image_tag }}
-      options: --user 1001:1001
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-tests
       cancel-in-progress: true

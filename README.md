@@ -54,7 +54,7 @@ cargo build --release
 multi_buy_service -c settings.toml server
 
 # Or with environment variables only
-HDS_GRPC_LISTEN=0.0.0.0:6080 multi_buy_service server
+MB__GRPC_LISTEN=0.0.0.0:6080 multi_buy_service server
 ```
 
 ## Testing
@@ -73,32 +73,32 @@ docker run -p 6080:6080 -p 19011:19011 multibuy-service
 
 ## Configuration
 
-All settings can be configured via a TOML file or environment variables prefixed with `HDS_`.
+All settings can be configured via a TOML file or environment variables prefixed with `MB__` (double-underscore separator).
 
 ```toml
 # log settings for the application (RUST_LOG format)
-# Env: HDS_LOG
+# Env: MB__LOG
 log = "INFO"
 
 # Listen address for gRPC requests
-# Env: HDS_GRPC_LISTEN
+# Env: MB__GRPC_LISTEN
 grpc_listen = "0.0.0.0:6080"
 
 # Prometheus metrics endpoint
 [metrics]
-# Env: HDS_METRICS_ENDPOINT
+# Env: MB__METRICS__ENDPOINT
 endpoint = "0.0.0.0:19011"
 
 # Cache cleanup interval (humantime format)
-# Env: HDS_CLEANUP_TIMEOUT
+# Env: MB__CLEANUP_TIMEOUT
 # cleanup_timeout = "30 minutes"
 
 # Base58-encoded hotspot public keys to deny
-# Env: HDS_DENIED_HOTSPOTS (comma-separated)
+# Env: MB__DENIED_HOTSPOTS (comma-separated)
 # denied_hotspots = ["112bUuQaE7j73THS9ABShHGokm46Miip9L361FSyWv7zSYn8hZWf"]
 
 # Region names to deny (uses proto enum names, e.g., "US915", "EU868", "AU915")
-# Env: HDS_DENIED_REGIONS (comma-separated)
+# Env: MB__DENIED_REGIONS (comma-separated)
 # denied_regions = ["US915"]
 ```
 
@@ -106,12 +106,12 @@ endpoint = "0.0.0.0:19011"
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `HDS_LOG` | RUST_LOG format log level | `INFO` |
-| `HDS_GRPC_LISTEN` | gRPC listen address | `0.0.0.0:6080` |
-| `HDS_METRICS_ENDPOINT` | Prometheus metrics listen address | `0.0.0.0:19011` |
-| `HDS_CLEANUP_TIMEOUT` | Cache cleanup interval | `30 minutes` |
-| `HDS_DENIED_HOTSPOTS` | Comma-separated base58 hotspot public keys to deny | (empty) |
-| `HDS_DENIED_REGIONS` | Comma-separated region names to deny | (empty) |
+| `MB__LOG` | RUST_LOG format log level | `INFO` |
+| `MB__GRPC_LISTEN` | gRPC listen address | `0.0.0.0:6080` |
+| `MB__METRICS__ENDPOINT` | Prometheus metrics listen address | `0.0.0.0:19011` |
+| `MB__CLEANUP_TIMEOUT` | Cache cleanup interval | `30 minutes` |
+| `MB__DENIED_HOTSPOTS` | Comma-separated base58 hotspot public keys to deny | (empty) |
+| `MB__DENIED_REGIONS` | Comma-separated region names to deny | (empty) |
 
 ### Available Regions
 

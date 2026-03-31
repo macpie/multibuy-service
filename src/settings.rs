@@ -47,8 +47,8 @@ impl Settings {
     /// optional path and can be overriden with environment variables.
     ///
     /// Environemnt overrides have the same name as the entries in the settings
-    /// file in uppercase and prefixed with "HDS_". For example
-    /// "HDS_LOG" will override the log setting.
+    /// file in uppercase and prefixed with "MB_". For example
+    /// "MB_LOG" will override the log setting.
     pub fn new<P: AsRef<Path>>(path: Option<P>) -> Result<Self, config::ConfigError> {
         let mut builder = Config::builder();
 
@@ -57,10 +57,10 @@ impl Settings {
             let filename = file.as_ref().to_str().expect("file name");
             builder = builder.add_source(File::with_name(filename).required(false));
         }
-        // Add in settings from the environment (with a prefix of HDS)
-        // Eg.. `HDS_LOG=DEBUG ./target/release/multi_buy_service` would set the `log` key
+        // Add in settings from the environment (with a prefix of MB)
+        // Eg.. `MB_LOG=DEBUG ./target/release/multi_buy_service` would set the `log` key
         builder
-            .add_source(Environment::with_prefix("hds").prefix_separator("_"))
+            .add_source(Environment::with_prefix("MB").prefix_separator("__"))
             .build()
             .and_then(|config| config.try_deserialize())
     }

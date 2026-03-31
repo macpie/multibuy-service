@@ -20,12 +20,6 @@ pub struct Settings {
     /// Metrics settings
     #[serde(default)]
     pub metrics: crate::metrics::Settings,
-    /// Base58-encoded hotspot public keys to deny
-    #[serde(default)]
-    pub denied_hotspots: Vec<String>,
-    /// Region names to deny (e.g., "US915", "EU868")
-    #[serde(default)]
-    pub denied_regions: Vec<String>,
     #[serde(default = "default_cleanup_timeout", with = "humantime_serde")]
     pub cleanup_timeout: Duration,
 }

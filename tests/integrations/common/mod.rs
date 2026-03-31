@@ -15,26 +15,16 @@ pub async fn available_port() -> SocketAddr {
     listener.local_addr().unwrap()
 }
 
-/// Build a test Settings with the given overrides.
-pub fn test_settings(denied_hotspots: Vec<String>, denied_regions: Vec<String>) -> Settings {
-    test_settings_with_cleanup(
-        denied_hotspots,
-        denied_regions,
-        Duration::from_secs(60 * 30),
-    )
+/// Build a test Settings with defaults.
+pub fn test_settings() -> Settings {
+    test_settings_with_cleanup(Duration::from_secs(60 * 30))
 }
 
 /// Build a test Settings with custom cleanup timeout.
-pub fn test_settings_with_cleanup(
-    denied_hotspots: Vec<String>,
-    denied_regions: Vec<String>,
-    cleanup_timeout: Duration,
-) -> Settings {
+pub fn test_settings_with_cleanup(cleanup_timeout: Duration) -> Settings {
     Settings::new::<String>(None).map_or_else(
         |_| panic!("failed to create default settings"),
         |mut s| {
-            s.denied_hotspots = denied_hotspots;
-            s.denied_regions = denied_regions;
             s.grpc_listen = "127.0.0.1:0".parse().unwrap();
             s.cleanup_timeout = cleanup_timeout;
             s

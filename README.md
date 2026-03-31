@@ -11,8 +11,6 @@ As packets come in to HPR A and HPR B, they will check in with Multi-Buy service
 ## Features
 
 - Distributed packet counter across load-balanced HPR instances
-- Hotspot deny list: reject packets from specific hotspots by public key
-- Region deny list: reject packets from entire regions
 - Prometheus metrics endpoint
 - Automatic cache cleanup (configurable, default 30 minutes)
 - Graceful shutdown via SIGTERM/SIGINT
@@ -92,14 +90,6 @@ endpoint = "0.0.0.0:19011"
 # Cache cleanup interval (humantime format)
 # Env: MB__CLEANUP_TIMEOUT
 # cleanup_timeout = "30 minutes"
-
-# Base58-encoded hotspot public keys to deny
-# Env: MB__DENIED_HOTSPOTS (comma-separated)
-# denied_hotspots = ["112bUuQaE7j73THS9ABShHGokm46Miip9L361FSyWv7zSYn8hZWf"]
-
-# Region names to deny (uses proto enum names, e.g., "US915", "EU868", "AU915")
-# Env: MB__DENIED_REGIONS (comma-separated)
-# denied_regions = ["US915"]
 ```
 
 ### Environment Variables
@@ -110,19 +100,12 @@ endpoint = "0.0.0.0:19011"
 | `MB__GRPC_LISTEN` | gRPC listen address | `0.0.0.0:6080` |
 | `MB__METRICS__ENDPOINT` | Prometheus metrics listen address | `0.0.0.0:19011` |
 | `MB__CLEANUP_TIMEOUT` | Cache cleanup interval | `30 minutes` |
-| `MB__DENIED_HOTSPOTS` | Comma-separated base58 hotspot public keys to deny | (empty) |
-| `MB__DENIED_REGIONS` | Comma-separated region names to deny | (empty) |
-
-### Available Regions
-
-`US915`, `EU868`, `EU433`, `CN470`, `AU915`, `AS923_1`, `KR920`, `IN865`, `AS923_2`, `AS923_3`, `AS923_4`, `AS923_1B`, `CD900_1A`, `RU864`, `EU868_A`, `EU868_B`, `EU868_C`, `EU868_D`, `EU868_E`, `EU868_F`, `AU915_SB1`, `AU915_SB2`, `AS923_1A`, `AS923_1C`, `AS923_1D`, `AS923_1E`, `AS923_1F`
 
 ## Metrics
 
 | Metric | Type | Description |
 |--------|------|-------------|
 | `multi_buy_hit_total` | Counter | Total inc requests received |
-| `multi_buy_denied_total` | Counter | Requests denied by hotspot/region deny list |
 | `multi_buy_cache_size` | Gauge | Number of entries in the cache |
 | `multi_buy_cache_cleaned_total` | Counter | Total entries removed by cache cleanup |
 

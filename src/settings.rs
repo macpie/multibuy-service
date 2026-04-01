@@ -41,8 +41,8 @@ impl Settings {
     /// optional path and can be overriden with environment variables.
     ///
     /// Environemnt overrides have the same name as the entries in the settings
-    /// file in uppercase and prefixed with "MB_". For example
-    /// "MB_LOG" will override the log setting.
+    /// file in uppercase and prefixed with "MB__". For example
+    /// "MB__LOG" will override the log setting.
     pub fn new<P: AsRef<Path>>(path: Option<P>) -> Result<Self, config::ConfigError> {
         let mut builder = Config::builder();
 

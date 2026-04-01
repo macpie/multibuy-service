@@ -61,8 +61,6 @@ impl AllowLists {
         Ok(Self { hotspots, regions })
     }
 
-    /// Returns `true` if the request should be denied.
-    /// An empty list means no restriction (all allowed).
     pub fn is_denied(&self, req: &MultiBuyIncReqV1) -> bool {
         let hotspot_allowed = self.hotspots.contains(&req.hotspot_key);
         let region_allowed = self.regions.contains(&req.region);

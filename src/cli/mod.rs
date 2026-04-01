@@ -20,7 +20,6 @@ pub struct Cli {
 
 #[derive(Debug, clap::Subcommand)]
 pub enum Cmd {
-    /// Run as a long-running service that continuously executes compaction jobs
     Server(Server),
 }
 

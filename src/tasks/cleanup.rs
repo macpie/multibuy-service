@@ -28,8 +28,7 @@ impl CacheCleanup {
     }
 
     async fn run(self, shutdown: triggered::Listener) -> anyhow::Result<()> {
-        let batch_timer = tokio::time::sleep(self.cleanup_timeout);
-        tokio::pin!(batch_timer);
+        let mut interval = tokio::time::interval(self.cleanup_timeout);
 
         loop {
             tokio::select! {
@@ -38,11 +37,9 @@ impl CacheCleanup {
                     tracing::info!("shutdown signal received, stopping cache cleanup");
                     break;
                 },
-                _ = &mut batch_timer => {
+                _ = interval.tick() => {
                     let removed = self.cache.remove_expired(self.cleanup_timeout);
                     tracing::info!("cleaned {} entries", removed);
-
-                    batch_timer.as_mut().reset(tokio::time::Instant::now() + self.cleanup_timeout);
                 }
             }
         }

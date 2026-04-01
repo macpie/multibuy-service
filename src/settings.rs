@@ -52,7 +52,7 @@ impl Settings {
             builder = builder.add_source(File::with_name(filename).required(false));
         }
         // Add in settings from the environment (with a prefix of MB)
-        // Eg.. `MB_LOG=DEBUG ./target/release/multi_buy_service` would set the `log` key
+        // Eg.. `MB__LOG=DEBUG ./target/release/multi_buy_service` would set the `log` key
         builder
             .add_source(Environment::with_prefix("MB").prefix_separator("__"))
             .build()

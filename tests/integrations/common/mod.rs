@@ -49,9 +49,6 @@ pub async fn start_server(settings: &Settings, addr: SocketAddr) -> triggered::T
             .unwrap();
     });
 
-    // Give the server a moment to start
-    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
-
     trigger
 }
 
@@ -85,8 +82,6 @@ pub async fn start_server_with_cleanup(
         let cleanup = CacheCleanup::from_cache(cache, cleanup_timeout);
         cleanup.run_until(shutdown_clone).await.unwrap();
     });
-
-    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
 
     trigger
 }

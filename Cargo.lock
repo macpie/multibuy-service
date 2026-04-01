@@ -820,7 +820,7 @@ dependencies = [
 [[package]]
 name = "helium-proto"
 version = "0.1.0"
-source = "git+https://github.com/helium/proto.git?branch=macpie%2Fmultibuy2.0#6b0dca14975012fcfaf73c2615868d19e6a54a0f"
+source = "git+https://github.com/helium/proto.git?branch=master#ba28806c19158db7e25e8a7f462a3c3cb2e7b85f"
 dependencies = [
  "bytes",
  "msg-signature",
@@ -1280,7 +1280,7 @@ dependencies = [
 [[package]]
 name = "msg-signature"
 version = "0.1.0"
-source = "git+https://github.com/helium/proto.git?branch=macpie%2Fmultibuy2.0#6b0dca14975012fcfaf73c2615868d19e6a54a0f"
+source = "git+https://github.com/helium/proto.git?branch=master#ba28806c19158db7e25e8a7f462a3c3cb2e7b85f"
 dependencies = [
  "msg-signature-macro",
 ]
@@ -1288,7 +1288,7 @@ dependencies = [
 [[package]]
 name = "msg-signature-macro"
 version = "0.1.0"
-source = "git+https://github.com/helium/proto.git?branch=macpie%2Fmultibuy2.0#6b0dca14975012fcfaf73c2615868d19e6a54a0f"
+source = "git+https://github.com/helium/proto.git?branch=master#ba28806c19158db7e25e8a7f462a3c3cb2e7b85f"
 dependencies = [
  "quote",
  "syn 2.0.117",
@@ -1385,16 +1385,6 @@ dependencies = [
  "elliptic-curve",
  "primeorder",
  "sha2",
-]
-
-[[package]]
-name = "parking_lot"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3742b2c103b9f06bc9fff0a37ff4912935851bee6d36f3c02bcc755bcfec228f"
-dependencies = [
- "lock_api",
- "parking_lot_core",
 ]
 
 [[package]]
@@ -2185,7 +2175,6 @@ dependencies = [
  "bytes",
  "libc",
  "mio 1.2.0",
- "parking_lot",
  "pin-project-lite",
  "signal-hook-registry",
  "socket2",

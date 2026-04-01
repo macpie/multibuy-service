@@ -6,7 +6,6 @@ pub mod settings;
 
 const HIT_TOTAL: &str = "multi_buy_hit_total";
 const CACHE_SIZE: &str = "multi_buy_cache_size";
-const CACHE_CLEANED_TOTAL: &str = "multi_buy_cache_cleaned_total";
 const REQUEST_DURATION: &str = "multi_buy_request_duration_ms";
 
 pub fn start_metrics(settings: &Settings) -> anyhow::Result<()> {
@@ -32,8 +31,8 @@ pub fn set_cache_size(size: f64) {
     metrics::gauge!(CACHE_SIZE).set(size);
 }
 
-pub fn increment_cache_cleaned(count: u64) {
-    metrics::counter!(CACHE_CLEANED_TOTAL).increment(count);
+pub fn inc_cache_size() {
+    metrics::gauge!(CACHE_SIZE).increment(1);
 }
 
 pub fn record_request_duration(duration: std::time::Duration) {

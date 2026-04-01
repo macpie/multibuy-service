@@ -40,8 +40,6 @@ impl CacheCleanup {
                 },
                 _ = &mut batch_timer => {
                     let removed = self.cache.remove_expired(self.cleanup_timeout);
-                    crate::metrics::set_cache_size(self.cache.len() as f64);
-                    crate::metrics::increment_cache_cleaned(removed as u64);
                     tracing::info!("cleaned {} entries", removed);
 
                     batch_timer.as_mut().reset(tokio::time::Instant::now() + self.cleanup_timeout);

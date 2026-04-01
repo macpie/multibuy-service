@@ -13,14 +13,14 @@ humantime-serde = "1.1"
 metrics = "0.24"
 metrics-exporter-prometheus = "0.18"
 serde = { version = "1.0", features = ["derive"] }
-tokio = { version = "1.50", features = ["full"] }
+tokio = { version = "1.50" }
 tonic = "0.14"
 tracing = "0.1"
 triggered = "0.1"
 
 # Oracles
 custom-tracing = { git = "https://github.com/helium/oracles.git", branch = "main" }
-helium-proto = { git = "https://github.com/helium/proto.git", branch = "macpie/multibuy2.0", features = [
+helium-proto = { git = "https://github.com/helium/proto.git", branch = "master", features = [
     "services",
 ] }
 task-manager = { git = "https://github.com/helium/oracles", branch = "main" }

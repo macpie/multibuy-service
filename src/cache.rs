@@ -1,6 +1,5 @@
 use dashmap::mapref::entry::Entry;
 use dashmap::DashMap;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Instant;
 
 #[derive(Debug, Clone)]
@@ -9,31 +8,16 @@ pub(crate) struct CacheValue {
     pub(crate) created_at: Instant,
 }
 
+#[derive(Default)]
 pub struct Cache {
     map: DashMap<String, CacheValue>,
-    pub size: AtomicUsize,
-}
-
-impl Default for Cache {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl Cache {
     pub fn new() -> Self {
         Self {
             map: DashMap::new(),
-            size: AtomicUsize::new(0),
         }
-    }
-
-    pub fn len(&self) -> usize {
-        self.size.load(Ordering::Relaxed)
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
     }
 
     pub fn inc(&self, key: String) -> u32 {
@@ -48,8 +32,7 @@ impl Cache {
                     count: 1,
                     created_at: Instant::now(),
                 });
-                self.size.fetch_add(1, Ordering::Relaxed);
-                crate::metrics::set_cache_size(self.len() as f64);
+                crate::metrics::inc_cache_size();
                 1
             }
         }
@@ -60,7 +43,7 @@ impl Cache {
         self.map.retain(|_, v| v.created_at.elapsed() < max_age);
         let after = self.map.len();
         let removed = before - after;
-        self.size.store(after, Ordering::Relaxed);
+        crate::metrics::set_cache_size(after as f64);
         removed
     }
 }

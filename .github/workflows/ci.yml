@@ -120,22 +120,19 @@ jobs:
     needs: [compute-base-build-tag, fmt, clippy, tests]
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ github.repository }}/base:${{ needs.compute-base-build-tag.outputs.image_tag }}
+      image: ubuntu:20.04
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-build-package
       cancel-in-progress: true
     steps:
       - name: Checkout Repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-      - name: Cache Cargo Target Directory
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
+      - name: Rust install
+        uses: actions-rust-lang/setup-rust-toolchain@150fca883cd4034361b621bd4e6a9d34e5143606 # v1
+      - name: Install Protoc
+        uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3
         with:
-          path: target
-          key: build-base-${{ needs.compute-base-build-tag.outputs.image_tag }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            build-base-${{ needs.compute-base-build-tag.outputs.image_tag }}-
-      - name: Build release binary
-        run: cargo build --release
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Debian packaging
         env:
           PACKAGECLOUD_API_KEY: ${{ secrets.PACKAGECLOUD_API_KEY }}

@@ -21,6 +21,9 @@ impl DenyLists {
     ) -> anyhow::Result<Self> {
         let mut hotspots = HashSet::new();
         for key_b58 in hotspot_keys_b58 {
+            if key_b58.is_empty() {
+                continue;
+            }
             let decoded = bs58::decode(key_b58)
                 .into_vec()
                 .map_err(|e| anyhow::anyhow!("invalid base58 hotspot key '{}': {}", key_b58, e))?;
@@ -29,6 +32,9 @@ impl DenyLists {
 
         let mut regions = HashSet::new();
         for name in region_names {
+            if name.is_empty() {
+                continue;
+            }
             let region = Region::from_str_name(name)
                 .ok_or_else(|| anyhow::anyhow!("unknown region in deny list: '{}'", name))?;
             regions.insert(region as i32);
@@ -46,5 +52,22 @@ impl DenyLists {
             return true;
         }
         false
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn empty_string_region_is_skipped() {
+        let deny = DenyLists::from_config(&[], &["".into()]).unwrap();
+        assert!(deny.regions.is_empty());
+    }
+
+    #[test]
+    fn empty_string_hotspot_is_skipped() {
+        let deny = DenyLists::from_config(&["".into()], &[]).unwrap();
+        assert!(deny.hotspots.is_empty());
     }
 }

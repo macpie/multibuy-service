@@ -1,4 +1,5 @@
 use crate::cache::Cache;
+use crate::deny_lists::DenyLists;
 use crate::settings::Settings;
 use helium_proto::services::multi_buy::{multi_buy_server, MultiBuyIncReqV1, MultiBuyIncResV1};
 use std::sync::Arc;
@@ -6,12 +7,16 @@ use tonic::Request;
 
 pub struct State {
     cache: Arc<Cache>,
+    deny_lists: DenyLists,
 }
 
 impl State {
-    pub fn new(_settings: &Settings) -> anyhow::Result<Self> {
+    pub fn new(settings: &Settings) -> anyhow::Result<Self> {
+        let deny_lists =
+            DenyLists::from_config(&settings.denied_hotspots, &settings.denied_regions)?;
         Ok(Self {
             cache: Arc::new(Cache::new()),
+            deny_lists,
         })
     }
 
@@ -30,15 +35,25 @@ impl multi_buy_server::MultiBuy for State {
         crate::metrics::increment_hit();
 
         let multi_buy_req = request.into_inner();
+        let denied = self.deny_lists.is_denied(&multi_buy_req);
         let new_count = self.cache.inc(multi_buy_req.key.clone());
 
-        tracing::info!("Key={} Count={}", multi_buy_req.key, new_count);
+        if denied {
+            tracing::info!(
+                "Key={} Count={} denied by deny list",
+                multi_buy_req.key,
+                new_count
+            );
+            crate::metrics::increment_denied();
+        } else {
+            tracing::debug!("Key={} Count={}", multi_buy_req.key, new_count);
+        }
 
         crate::metrics::record_request_duration(start.elapsed());
 
         Ok(tonic::Response::new(MultiBuyIncResV1 {
             count: new_count,
-            denied: false,
+            denied,
         }))
     }
 }

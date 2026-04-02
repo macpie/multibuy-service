@@ -11,6 +11,7 @@ As packets come in to HPR A and HPR B, they will check in with Multi-Buy service
 ## Features
 
 - Distributed packet counter across load-balanced HPR instances
+- Hotspot and region deny lists
 - Prometheus metrics endpoint
 - Automatic cache cleanup (configurable, default 30 minutes)
 - Graceful shutdown via SIGTERM/SIGINT
@@ -82,6 +83,14 @@ log = "INFO"
 # Env: MB__GRPC_LISTEN
 grpc_listen = "0.0.0.0:6080"
 
+# Base58-encoded hotspot public keys to deny
+# Env: MB__DENIED_HOTSPOTS
+# denied_hotspots = []
+
+# Region names to deny (e.g., "US915", "EU868")
+# Env: MB__DENIED_REGIONS
+# denied_regions = []
+
 # Prometheus metrics endpoint
 [metrics]
 # Env: MB__METRICS__ENDPOINT
@@ -100,12 +109,15 @@ endpoint = "0.0.0.0:19011"
 | `MB__GRPC_LISTEN` | gRPC listen address | `0.0.0.0:6080` |
 | `MB__METRICS__ENDPOINT` | Prometheus metrics listen address | `0.0.0.0:19011` |
 | `MB__CLEANUP_TIMEOUT` | Cache cleanup interval | `30 minutes` |
+| `MB__DENIED_HOTSPOTS` | Base58-encoded hotspot public keys to deny | `[]` |
+| `MB__DENIED_REGIONS` | Region names to deny (e.g., US915, EU868) | `[]` |
 
 ## Metrics
 
 | Metric | Type | Description |
 |--------|------|-------------|
 | `multi_buy_hit_total` | Counter | Total inc requests received |
+| `multi_buy_denied_total` | Counter | Total requests denied by deny lists |
 | `multi_buy_cache_size` | Gauge | Number of entries in the cache |
 | `multi_buy_cache_cleaned_total` | Counter | Total entries removed by cache cleanup |
 

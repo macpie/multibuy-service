@@ -1,5 +1,6 @@
 pub mod cache;
 pub mod cli;
+pub mod deny_lists;
 pub mod metrics;
 pub mod settings;
 pub mod state;

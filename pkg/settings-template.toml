@@ -6,6 +6,14 @@ log = "INFO"
 # Env: MB__GRPC_LISTEN
 grpc_listen = "0.0.0.0:6080"
 
+# Base58-encoded hotspot public keys to deny
+# Env: MB__DENIED_HOTSPOTS
+# denied_hotspots = []
+
+# Region names to deny (e.g., "US915", "EU868")
+# Env: MB__DENIED_REGIONS
+# denied_regions = []
+
 # Prometheus metrics endpoint
 [metrics]
 # Env: MB__METRICS__ENDPOINT

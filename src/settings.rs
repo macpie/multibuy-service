@@ -22,6 +22,12 @@ pub struct Settings {
     pub metrics: crate::metrics::Settings,
     #[serde(default = "default_cleanup_timeout", with = "humantime_serde")]
     pub cleanup_timeout: Duration,
+    /// Base58-encoded hotspot public keys to deny
+    #[serde(default)]
+    pub denied_hotspots: Vec<String>,
+    /// Region names to deny (e.g., "US915", "EU868")
+    #[serde(default)]
+    pub denied_regions: Vec<String>,
 }
 
 pub fn default_log() -> String {
@@ -54,8 +60,87 @@ impl Settings {
         // Add in settings from the environment (with a prefix of MB)
         // Eg.. `MB__LOG=DEBUG ./target/release/multi_buy_service` would set the `log` key
         builder
-            .add_source(Environment::with_prefix("MB").prefix_separator("__"))
+            .add_source(
+                Environment::with_prefix("MB")
+                    .prefix_separator("__")
+                    .try_parsing(true)
+                    .list_separator(",")
+                    .with_list_parse_key("denied_hotspots")
+                    .with_list_parse_key("denied_regions"),
+            )
             .build()
             .and_then(|config| config.try_deserialize())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Mutex;
+
+    // Mutex to prevent env var tests from racing each other.
+    // Using .lock().unwrap_or_else to recover from poison.
+    static ENV_MUTEX: Mutex<()> = Mutex::new(());
+
+    fn with_env_vars<F: FnOnce() -> R, R>(vars: &[(&str, &str)], f: F) -> R {
+        let _lock = ENV_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
+        for (key, val) in vars {
+            unsafe { std::env::set_var(key, val) };
+        }
+        let result = f();
+        for (key, _) in vars {
+            unsafe { std::env::remove_var(key) };
+        }
+        result
+    }
+
+    #[test]
+    fn single_denied_region_from_env() {
+        with_env_vars(&[("MB__DENIED_REGIONS", "EU868")], || {
+            let settings = Settings::new::<String>(None).unwrap();
+            assert_eq!(settings.denied_regions, vec!["EU868"]);
+        });
+    }
+
+    #[test]
+    fn multiple_denied_regions_from_env() {
+        with_env_vars(&[("MB__DENIED_REGIONS", "EU868,US915")], || {
+            let settings = Settings::new::<String>(None).unwrap();
+            assert_eq!(settings.denied_regions, vec!["EU868", "US915"]);
+        });
+    }
+
+    #[test]
+    fn single_denied_hotspot_from_env() {
+        with_env_vars(
+            &[(
+                "MB__DENIED_HOTSPOTS",
+                "112bUuQaE7j73THS9ABShHGokm46Miip9L361FSyWv7zSYn8hZWf",
+            )],
+            || {
+                let settings = Settings::new::<String>(None).unwrap();
+                assert_eq!(
+                    settings.denied_hotspots,
+                    vec!["112bUuQaE7j73THS9ABShHGokm46Miip9L361FSyWv7zSYn8hZWf"]
+                );
+            },
+        );
+    }
+
+    #[test]
+    fn multiple_denied_hotspots_from_env() {
+        with_env_vars(&[("MB__DENIED_HOTSPOTS", "key1,key2,key3")], || {
+            let settings = Settings::new::<String>(None).unwrap();
+            assert_eq!(settings.denied_hotspots, vec!["key1", "key2", "key3"]);
+        });
+    }
+
+    #[test]
+    fn empty_deny_lists_by_default() {
+        with_env_vars(&[], || {
+            let settings = Settings::new::<String>(None).unwrap();
+            assert!(settings.denied_regions.is_empty());
+            assert!(settings.denied_hotspots.is_empty());
+        });
     }
 }

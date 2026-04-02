@@ -5,6 +5,7 @@ use std::net::SocketAddr;
 pub mod settings;
 
 const HIT_TOTAL: &str = "multi_buy_hit_total";
+const DENIED_TOTAL: &str = "multi_buy_denied_total";
 const CACHE_SIZE: &str = "multi_buy_cache_size";
 const REQUEST_DURATION: &str = "multi_buy_request_duration_ms";
 
@@ -25,6 +26,10 @@ fn install(socket_addr: SocketAddr) -> anyhow::Result<()> {
 
 pub fn increment_hit() {
     metrics::counter!(HIT_TOTAL).increment(1);
+}
+
+pub fn increment_denied() {
+    metrics::counter!(DENIED_TOTAL).increment(1);
 }
 
 pub fn set_cache_size(size: f64) {

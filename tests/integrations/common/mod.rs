@@ -20,6 +20,17 @@ pub fn test_settings() -> Settings {
     test_settings_with_cleanup(Duration::from_secs(60 * 30))
 }
 
+/// Build a test Settings with deny lists configured.
+pub fn test_settings_with_deny_lists(
+    denied_hotspots: Vec<String>,
+    denied_regions: Vec<String>,
+) -> Settings {
+    let mut s = test_settings();
+    s.denied_hotspots = denied_hotspots;
+    s.denied_regions = denied_regions;
+    s
+}
+
 /// Build a test Settings with custom cleanup timeout.
 pub fn test_settings_with_cleanup(cleanup_timeout: Duration) -> Settings {
     Settings::new::<String>(None).map_or_else(

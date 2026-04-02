@@ -1,4 +1,5 @@
 use crate::common;
+use helium_proto::Region;
 use std::time::Duration;
 
 #[tokio::test]
@@ -106,4 +107,60 @@ async fn cache_entries_expire_after_cleanup() {
     // After expiry, a new inc should start from 1 again
     let res2 = common::inc(&mut client, "expire-key", vec![], 0).await;
     assert_eq!(res2.count, 1, "counter should reset after cache expiry");
+}
+
+#[tokio::test]
+async fn denied_region_returns_denied_response() {
+    let settings = common::test_settings_with_deny_lists(vec![], vec!["EU868".to_string()]);
+    let addr = common::available_port().await;
+    let _shutdown = common::start_server(&settings, addr).await;
+    let mut client = common::connect_client(addr).await;
+
+    // Request with denied region should be denied but still increment
+    let res = common::inc(&mut client, "key1", vec![], Region::Eu868 as i32).await;
+    assert!(res.denied);
+    assert_eq!(res.count, 1);
+
+    let res2 = common::inc(&mut client, "key1", vec![], Region::Eu868 as i32).await;
+    assert!(res2.denied);
+    assert_eq!(res2.count, 2);
+
+    // Request with non-denied region should not be denied
+    let res3 = common::inc(&mut client, "key2", vec![], Region::As9231 as i32).await;
+    assert!(!res3.denied);
+    assert_eq!(res3.count, 1);
+}
+
+#[tokio::test]
+async fn denied_hotspot_returns_denied_response() {
+    let hotspot_b58 = "112bUuQaE7j73THS9ABShHGokm46Miip9L361FSyWv7zSYn8hZWf".to_string();
+    let hotspot_bytes = bs58::decode(&hotspot_b58).into_vec().unwrap();
+
+    let settings = common::test_settings_with_deny_lists(vec![hotspot_b58], vec![]);
+    let addr = common::available_port().await;
+    let _shutdown = common::start_server(&settings, addr).await;
+    let mut client = common::connect_client(addr).await;
+
+    // Request with denied hotspot should be denied but still increment
+    let res = common::inc(&mut client, "key1", hotspot_bytes.clone(), 0).await;
+    assert!(res.denied);
+    assert_eq!(res.count, 1);
+
+    // Request with different hotspot should not be denied
+    let res2 = common::inc(&mut client, "key2", vec![1, 2, 3], 0).await;
+    assert!(!res2.denied);
+    assert_eq!(res2.count, 1);
+}
+
+#[tokio::test]
+async fn denied_region_us915() {
+    let settings = common::test_settings_with_deny_lists(vec![], vec!["US915".to_string()]);
+    let addr = common::available_port().await;
+    let _shutdown = common::start_server(&settings, addr).await;
+    let mut client = common::connect_client(addr).await;
+
+    // US915 is proto enum value 0 — must still be denied
+    let res = common::inc(&mut client, "key1", vec![], Region::Us915 as i32).await;
+    assert!(res.denied, "US915 (region value 0) should be denied");
+    assert_eq!(res.count, 1);
 }

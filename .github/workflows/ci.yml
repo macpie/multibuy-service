@@ -117,7 +117,7 @@ jobs:
 
   build-package:
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [compute-base-build-tag, fmt, clippy, tests]
+    needs: [fmt, clippy, tests]
     runs-on: ubuntu-latest
     container:
       image: ubuntu:20.04
@@ -142,6 +142,8 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build
         run: cargo build --all --release
+        env:
+          AWS_LC_SYS_CMAKE_BUILDER: 1
       - name: Debian packaging
         env:
           PACKAGECLOUD_API_KEY: ${{ secrets.PACKAGECLOUD_API_KEY }}

@@ -91,9 +91,9 @@ run_fpm()
 }
 
 # install fpm
-sudo apt update
-sudo apt install --yes ruby
-sudo gem install fpm -v 1.15.1 # current as of 2023-02-21
+apt-get update
+apt-get install --yes ruby
+gem install fpm -v 1.15.1 # current as of 2023-02-21
 
 write_unit_template
 write_prepost_template

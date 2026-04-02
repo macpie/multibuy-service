@@ -16,6 +16,7 @@ impl GrpcServer {
         tracing::info!("gRPC server listening @ {:?}", self.listen);
 
         tonic::transport::Server::builder()
+            .accept_http1(true)
             .add_service(MultiBuyServer::new(self.state))
             .serve_with_shutdown(self.listen, shutdown)
             .await?;

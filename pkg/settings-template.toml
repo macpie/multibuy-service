@@ -1,9 +1,12 @@
-
-# log settings for the application (RUST_LOG format). Default below
+# log settings for the application (RUST_LOG format)
+# Env: MB__LOG
 log = "INFO"
 
-# Listen address for grpc requests. Default "0.0.0.0:6080"
+# Listen address for gRPC requests
+# Env: MB__GRPC_LISTEN
 grpc_listen = "0.0.0.0:6080"
 
-# Listen address for metrics requests. Default "0.0.0.0:19011"
-metrics_listen = "0.0.0.0:19011"
+# Prometheus metrics endpoint
+[metrics]
+# Env: MB__METRICS__ENDPOINT
+endpoint = "0.0.0.0:19011"

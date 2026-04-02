@@ -1,9 +1,0 @@
-
-# log settings for the application (RUST_LOG format). Default below
-log = "INFO"
-
-# Listen address for grpc requests. Default "0.0.0.0:6080"
-grpc_listen = "0.0.0.0:6080"
-
-# Listen address for metrics requests. Default "0.0.0.0:19011"
-metrics_listen = "0.0.0.0:19011"

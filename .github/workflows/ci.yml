@@ -117,14 +117,25 @@ jobs:
 
   build-package:
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [fmt, clippy, tests]
+    needs: [compute-base-build-tag, fmt, clippy, tests]
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository }}/base:${{ needs.compute-base-build-tag.outputs.image_tag }}
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-build-package
       cancel-in-progress: true
     steps:
       - name: Checkout Repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - name: Cache Cargo Target Directory
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
+        with:
+          path: target
+          key: build-base-${{ needs.compute-base-build-tag.outputs.image_tag }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            build-base-${{ needs.compute-base-build-tag.outputs.image_tag }}-
+      - name: Build release binary
+        run: cargo build --release
       - name: Debian packaging
         env:
           PACKAGECLOUD_API_KEY: ${{ secrets.PACKAGECLOUD_API_KEY }}

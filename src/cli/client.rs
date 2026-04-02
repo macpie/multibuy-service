@@ -28,11 +28,9 @@ impl Client {
         };
 
         let region = match &self.region {
-            Some(name) => {
-                Region::from_str_name(name)
-                    .ok_or_else(|| anyhow::anyhow!("unknown region: '{}'", name))?
-                    as i32
-            }
+            Some(name) => Region::from_str_name(name)
+                .ok_or_else(|| anyhow::anyhow!("unknown region: '{}'", name))?
+                as i32,
             None => 0,
         };
 

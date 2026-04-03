@@ -1,10 +1,8 @@
-pub mod client;
 pub mod server;
 
 use crate::settings::Settings;
 use anyhow::Result;
 use clap::Parser;
-use client::Client;
 use server::Server;
 use std::path::PathBuf;
 
@@ -23,13 +21,11 @@ pub struct Cli {
 #[derive(Debug, clap::Subcommand)]
 pub enum Cmd {
     Server(Server),
-    Client(Client),
 }
 
 impl Cli {
     pub async fn run(self) -> Result<()> {
         match self.cmd {
-            Cmd::Client(client) => client.run().await,
             Cmd::Server(server) => {
                 let settings = Settings::new(self.config)?;
                 custom_tracing::init(settings.log.clone(), settings.custom_tracing.clone()).await?;

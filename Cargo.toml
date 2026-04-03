@@ -15,7 +15,7 @@ metrics = "0.24"
 metrics-exporter-prometheus = "0.18"
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1.50" }
-tonic = { version = "0.14", features = ["tls-native-roots", "tls-aws-lc"] }
+tonic = "0.14"
 tracing = "0.1"
 triggered = "0.1"
 
@@ -28,3 +28,4 @@ task-manager = { git = "https://github.com/helium/oracles", branch = "main" }
 
 [dev-dependencies]
 tokio-stream = "0.1"
+tonic = { version = "0.14", features = ["tls-native-roots", "tls-aws-lc"] }

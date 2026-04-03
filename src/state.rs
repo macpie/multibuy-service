@@ -36,24 +36,30 @@ impl multi_buy_server::MultiBuy for State {
 
         let multi_buy_req = request.into_inner();
         let denied = self.deny_lists.is_denied(&multi_buy_req);
-        let new_count = self.cache.inc(multi_buy_req.key.clone());
+        let count = self.cache.inc(multi_buy_req.key.clone());
+        let hotspot = bs58::encode(&multi_buy_req.hotspot_key).into_string();
 
         if denied {
             tracing::info!(
-                "Key={} Count={} denied by deny list",
-                multi_buy_req.key,
-                new_count
+                key = %multi_buy_req.key,
+                count,
+                hotspot,
+                region = %multi_buy_req.region,
+                "denied by deny list"
             );
             crate::metrics::increment_denied();
         } else {
-            tracing::debug!("Key={} Count={}", multi_buy_req.key, new_count);
+            tracing::debug!(
+                key = %multi_buy_req.key,
+                count,
+                hotspot,
+                region = %multi_buy_req.region,
+                "got inc req"
+            );
         }
 
         crate::metrics::record_request_duration(start.elapsed());
 
-        Ok(tonic::Response::new(MultiBuyIncResV1 {
-            count: new_count,
-            denied,
-        }))
+        Ok(tonic::Response::new(MultiBuyIncResV1 { count, denied }))
     }
 }

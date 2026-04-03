@@ -4,8 +4,8 @@ use std::collections::HashSet;
 
 /// Parsed deny lists ready for O(1) lookups.
 pub struct DenyLists {
-    /// Decoded hotspot public keys to deny.
-    hotspots: HashSet<Vec<u8>>,
+    /// Base58check hotspot addresses to deny.
+    hotspots: HashSet<String>,
     /// Proto region enum values to deny.
     regions: HashSet<i32>,
 }
@@ -13,22 +13,18 @@ pub struct DenyLists {
 impl DenyLists {
     /// Parse deny lists from raw config values.
     ///
-    /// `hotspot_keys_b58` are base58-encoded public keys.
+    /// `hotspot_keys_b58` are base58check-encoded public keys (matching what HPR
+    /// now sends as the `hotspot_key` bytes field).
     /// `region_names` are proto enum names like "US915" or "EU868".
     pub fn from_config(
         hotspot_keys_b58: &[String],
         region_names: &[String],
     ) -> anyhow::Result<Self> {
-        let mut hotspots = HashSet::new();
-        for key_b58 in hotspot_keys_b58 {
-            if key_b58.is_empty() {
-                continue;
-            }
-            let decoded = bs58::decode(key_b58)
-                .into_vec()
-                .map_err(|e| anyhow::anyhow!("invalid base58 hotspot key '{}': {}", key_b58, e))?;
-            hotspots.insert(decoded);
-        }
+        let hotspots: HashSet<String> = hotspot_keys_b58
+            .iter()
+            .filter(|k| !k.is_empty())
+            .cloned()
+            .collect();
 
         let mut regions = HashSet::new();
         for name in region_names {
@@ -45,8 +41,10 @@ impl DenyLists {
 
     /// Returns `true` if the request should be denied based on hotspot key or region.
     pub fn is_denied(&self, req: &MultiBuyIncReqV1) -> bool {
-        if self.hotspots.contains(&req.hotspot_key[..]) {
-            return true;
+        if let Ok(hotspot_str) = std::str::from_utf8(&req.hotspot_key) {
+            if self.hotspots.contains(hotspot_str) {
+                return true;
+            }
         }
         if self.regions.contains(&req.region) {
             return true;

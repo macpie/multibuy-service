@@ -28,8 +28,8 @@ use std::collections::HashSet;
 /// Parsed allow lists ready for O(1) lookups.
 /// When a list is empty, all values are allowed (no restriction).
 pub struct AllowLists {
-    /// Decoded hotspot public keys to allow. Empty means allow all.
-    pub hotspots: HashSet<Vec<u8>>,
+    /// Base58check hotspot addresses to allow. Empty means allow all.
+    pub hotspots: HashSet<String>,
     /// Proto region enum values to allow. Empty means allow all.
     pub regions: HashSet<i32>,
 }
@@ -37,19 +37,14 @@ pub struct AllowLists {
 impl AllowLists {
     /// Parse allow lists from raw config values.
     ///
-    /// `hotspot_keys_b58` are base58-encoded public keys.
+    /// `hotspot_keys_b58` are base58check-encoded public keys matching what HPR
+    /// sends as the `hotspot_key` bytes field.
     /// `region_names` are proto enum names like "US915" or "EU868".
     pub fn from_config(
         hotspot_keys_b58: &[String],
         region_names: &[String],
     ) -> anyhow::Result<Self> {
-        let mut hotspots = HashSet::new();
-        for key_b58 in hotspot_keys_b58 {
-            let decoded = bs58::decode(key_b58)
-                .into_vec()
-                .map_err(|e| anyhow::anyhow!("invalid base58 hotspot key '{}': {}", key_b58, e))?;
-            hotspots.insert(decoded);
-        }
+        let hotspots: HashSet<String> = hotspot_keys_b58.iter().cloned().collect();
 
         let mut regions = HashSet::new();
         for name in region_names {
@@ -62,10 +57,15 @@ impl AllowLists {
     }
 
     pub fn is_denied(&self, req: &MultiBuyIncReqV1) -> bool {
-        let hotspot_allowed = self.hotspots.contains(&req.hotspot_key);
-        let region_allowed = self.regions.contains(&req.region);
-
-        !hotspot_allowed || !region_allowed
+        if let Ok(hotspot_str) = std::str::from_utf8(&req.hotspot_key) {
+            if !self.hotspots.is_empty() && !self.hotspots.contains(hotspot_str) {
+                return true;
+            }
+        }
+        if !self.regions.is_empty() && !self.regions.contains(&req.region) {
+            return true;
+        }
+        false
     }
 }
 

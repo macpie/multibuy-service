@@ -21,9 +21,7 @@ pub struct Client {
 impl Client {
     pub async fn run(&self) -> Result<()> {
         let hotspot_key = match &self.hotspot_key {
-            Some(key_b58) => bs58::decode(key_b58)
-                .into_vec()
-                .map_err(|e| anyhow::anyhow!("invalid base58 hotspot key: {}", e))?,
+            Some(key_b58) => key_b58.as_bytes().to_vec(),
             None => vec![],
         };
 

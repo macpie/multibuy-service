@@ -134,7 +134,7 @@ async fn denied_region_returns_denied_response() {
 #[tokio::test]
 async fn denied_hotspot_returns_denied_response() {
     let hotspot_b58 = "112bUuQaE7j73THS9ABShHGokm46Miip9L361FSyWv7zSYn8hZWf".to_string();
-    let hotspot_bytes = bs58::decode(&hotspot_b58).into_vec().unwrap();
+    let hotspot_bytes = hotspot_b58.as_bytes().to_vec();
 
     let settings = common::test_settings_with_deny_lists(vec![hotspot_b58], vec![]);
     let addr = common::available_port().await;
@@ -150,6 +150,62 @@ async fn denied_hotspot_returns_denied_response() {
     let res2 = common::inc(&mut client, "key2", vec![1, 2, 3], 0).await;
     assert!(!res2.denied);
     assert_eq!(res2.count, 1);
+}
+
+/// Simulate the exact payload HPR sends after the b58 encoding change.
+///
+/// HPR builds the request as:
+///   key      = hpr_utils:bin_to_hex_string(PacketHash)   → hex string
+///   hotspot  = erlang:list_to_binary(libp2p_crypto:bin_to_b58(PubKeyBin)) → b58check string as bytes
+///   region   = Region atom (e.g. 'US915') → proto enum value
+#[tokio::test]
+async fn denied_hotspot_matches_hpr_payload() {
+    // A real Helium hotspot address (base58check-encoded public key).
+    // This is exactly what HPR now sends as hotspot_key bytes.
+    let hotspot_b58 = "13QZwkEXgjE3WzWzy6DvJ1dqKsZM5s3fc4pkFpFb2yME2nRRnJv";
+
+    // Configure the deny list with the same b58 address (as operators would).
+    let settings = common::test_settings_with_deny_lists(vec![hotspot_b58.to_string()], vec![]);
+    let addr = common::available_port().await;
+    let _shutdown = common::start_server(&settings, addr).await;
+    let mut client = common::connect_client(addr).await;
+
+    // Build the request exactly as HPR does:
+    //   key = hex-encoded packet hash
+    //   hotspot_key = b58 address string as raw bytes
+    //   region = proto enum value
+    let packet_hash_hex = "a1b2c3d4e5f6".to_string();
+    let hotspot_key_bytes = hotspot_b58.as_bytes().to_vec();
+    let region = Region::Us915 as i32;
+
+    let res = common::inc(
+        &mut client,
+        &packet_hash_hex,
+        hotspot_key_bytes.clone(),
+        region,
+    )
+    .await;
+    assert!(res.denied, "hotspot in deny list should be denied");
+    assert_eq!(res.count, 1);
+
+    // Same packet hash from a different hotspot should NOT be denied.
+    let other_hotspot = "11z69eJ3czc92k6snrfR1ENqbHP9bovzR4RNiB9qTDs4JDYiY3R";
+    let res2 = common::inc(
+        &mut client,
+        &packet_hash_hex,
+        other_hotspot.as_bytes().to_vec(),
+        region,
+    )
+    .await;
+    assert!(
+        !res2.denied,
+        "hotspot not in deny list should not be denied"
+    );
+    assert_eq!(res2.count, 2);
+
+    // Empty hotspot key (e.g. missing gateway info) should NOT be denied.
+    let res3 = common::inc(&mut client, "other-key", vec![], region).await;
+    assert!(!res3.denied, "empty hotspot key should not be denied");
 }
 
 #[tokio::test]

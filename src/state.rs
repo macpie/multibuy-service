@@ -37,7 +37,7 @@ impl multi_buy_server::MultiBuy for State {
         let multi_buy_req = request.into_inner();
         let denied = self.deny_lists.is_denied(&multi_buy_req);
         let count = self.cache.inc(multi_buy_req.key.clone());
-        let hotspot = bs58::encode(&multi_buy_req.hotspot_key).into_string();
+        let hotspot = String::from_utf8_lossy(&multi_buy_req.hotspot_key).into_owned();
 
         if denied {
             tracing::info!(
